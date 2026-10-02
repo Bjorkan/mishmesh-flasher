@@ -1,4 +1,4 @@
-import { reactive, ref, shallowRef, watch, computed } from "/lib/vue.min.js";
+import { reactive, ref, shallowRef, watch, computed } from "../lib/vue.min.js";
 import {
   firmwareClasses,
   hasVersions,
