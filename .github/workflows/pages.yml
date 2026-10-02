@@ -1,0 +1,45 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch firmware releases
+        run: |
+          echo "Fetching releases from burakcan/MeshCore-mishmesh..."
+          curl -sf -H "Accept: application/json" \
+            -H "User-Agent: MishMesh-Flasher" \
+            "https://api.github.com/repos/burakcan/MeshCore-mishmesh/releases?per_page=100" \
+            | jq '[.[] | select(.draft == false and .prerelease == false) | {type: "firmware", version: .tag_name, notes: (.body // ""), files: (.assets // [] | map({name: .name, url: .browser_download_url}))]' \
+            > releases-github.json
+          echo "Saved $(jq length releases-github.json) releases"
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

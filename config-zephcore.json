@@ -13,8 +13,8 @@
 		}
 	},
 	"notice": {
-		"otafixRecommended": "<article class='tertiary-container'>We strongly recommend installing <a target='_blank' href='/firmware/${bootloader}'>OTAFIX bootloader</a> by <a target='_blank' href='https://github.com/oltaco'>@oltaco</a> for more reliable Bluetooth OTA DFU. <a target='_blank' href='https://blog.meshcore.io/2026/04/06/otafix-bootloader'>Read more</a></article>",
-		"otafixNeeded": "<article class='tertiary-container'>WARNING: We strongly recommend installing <a target='_blank' href='/firmware/${bootloader}'>OTAFIX bootloader</a> by <a target='_blank' href='https://github.com/oltaco'>@oltaco</a> if you plan to update firmware via OTA bluetooth, as factory bootloader does not support it! <a target='_blank' href='https://blog.meshcore.io/2026/04/06/otafix-bootloader'>Read more</a></article>",
+		"otafixRecommended": "<article class='tertiary-container'>We strongly recommend installing <a target='_blank' href='/firmware/${bootloader}'>OTAFIX bootloader</a> by <a target='_blank' href='https://github.com/oltaco'>@oltaco</a> for more reliable Bluetooth OTA DFU.</article>",
+		"otafixNeeded": "<article class='tertiary-container'>WARNING: We strongly recommend installing <a target='_blank' href='/firmware/${bootloader}'>OTAFIX bootloader</a> by <a target='_blank' href='https://github.com/oltaco'>@oltaco</a> if you plan to update firmware via OTA bluetooth, as factory bootloader does not support it!</article>",
 		"rippleUserGuide": "<article class='primary-container'>For first time users, we recommend reading <a target='_blank' href='https://files.liamcottle.net/MeshCore/Documentation/Ripple_User_Guide.pdf'>Ripple User Guide</a></article>",
 		"kissRadioNotice": "<article class='primary-container'>You can use this firmware with <a target='_blank' href='https://github.com/openhop-dev/openhop_repeater'>openHop Repeater</a></article>"
 	},

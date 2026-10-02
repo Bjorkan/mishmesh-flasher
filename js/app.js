@@ -1,24 +1,39 @@
-import { reactive, ref, shallowRef, nextTick, watch, computed } from '/lib/vue.min.js';
-import { SerialConsole } from '/lib/console.js';
-import { commandReference } from './commands.js';
-import { firmwareClasses, hasVersions, roleValue, renderNotice, formatChangeLog, firmwareUrl } from './catalog.js';
-import { Dfu, downloadFirmware, esp32Address, flashEsp32, flashNrf52, isMergedImage, pickFlashFile, releaseFlasher } from './flash.js';
-import { CONSOLE_PATH, buildPath, parsePath, isSamePage } from './router.js';
-import { serialAPI, serialSupported } from './serial.js';
-import { isIframe, logoFile } from './site.js';
+import { reactive, ref, shallowRef, watch, computed } from "/lib/vue.min.js";
+import {
+  firmwareClasses,
+  hasVersions,
+  roleValue,
+  renderNotice,
+  formatChangeLog,
+  firmwareUrl,
+} from "./catalog.js";
+import {
+  Dfu,
+  downloadFirmware,
+  esp32Address,
+  flashEsp32,
+  flashNrf52,
+  isMergedImage,
+  pickFlashFile,
+  releaseFlasher,
+} from "./flash.js";
+import { buildPath, parsePath, isSamePage } from "./router.js";
+import { serialAPI, serialSupported } from "./serial.js";
+import { isIframe, logoFile } from "./site.js";
 
-const WEB_SERIAL_UNSUPPORTED = "Your browser doesn't support Web Serial API. Please use Chrome or Edge on Desktop";
+const WEB_SERIAL_UNSUPPORTED =
+  "Your browser doesn't support Web Serial API. Please use Chrome or Edge on Desktop";
 
 export function createSetup(config) {
   return function setup() {
-    const consoleEditBox = ref();
-    const consoleWindow = ref();
-    const deviceFilterText = ref('');
+    const deviceFilterText = ref("");
     // device tooltips embed large SVG pictures, so only the hovered one is rendered
     const hoveredDevice = shallowRef(null);
-    const displayWelcomeBanner = ref(isIframe && !localStorage.getItem('welcomeBannerDismissed'));
+    const displayWelcomeBanner = ref(
+      isIframe && !localStorage.getItem("welcomeBannerDismissed"),
+    );
 
-    const snackbar = reactive({ text: '', class: '', icon: '' });
+    const snackbar = reactive({ text: "", class: "", icon: "" });
 
     const selected = reactive({
       device: null,
@@ -33,66 +48,85 @@ export function createSetup(config) {
       instance: null,
       active: false,
       percent: 0,
-      log: '',
-      error: '',
+      log: "",
+      error: "",
       dfuComplete: false,
     });
 
     // nRF52 "Erase Flash": flashes a formatter firmware that wipes the external flash
     const eraser = reactive({ active: false, percent: 0 });
 
-    const serialCon = reactive({
-      instance: null,
-      opened: false,
-      content: '',
-      edit: '',
-    });
-
-    window.app = { selected, flashing, serialCon };
+    window.app = { selected, flashing };
 
     const log = {
-      clean() { flashing.log = '' },
-      write(data) { flashing.log += data },
-      writeLine(data) { flashing.log += data + '\n' },
+      clean() {
+        flashing.log = "";
+      },
+      write(data) {
+        flashing.log += data;
+      },
+      writeLine(data) {
+        flashing.log += data + "\n";
+      },
     };
 
     // --- catalog views ---
 
     const fwValue = (firmware, key) => roleValue(config, firmware, key);
-    const currentVersion = computed(() => selected.firmware?.version[selected.version] ?? null);
-    const notice = computed(() => selected.firmware ? renderNotice(config, selected.device, selected.firmware) : '');
+    const currentVersion = computed(
+      () => selected.firmware?.version[selected.version] ?? null,
+    );
+    const notice = computed(() =>
+      selected.firmware
+        ? renderNotice(config, selected.device, selected.firmware)
+        : "",
+    );
 
     const devices = computed(() => {
       const filter = deviceFilterText.value.toLowerCase();
       return config.device
         .toSorted((a, b) => a.name.localeCompare(b.name))
-        .filter(d => d.name.toLowerCase().includes(filter));
+        .filter((d) => d.name.toLowerCase().includes(filter));
     });
 
     const deviceFirmwareByClass = computed(() => {
-      if(!selected.device) return {};
+      if (!selected.device) return {};
       const groups = {};
-      for(const fw of selected.device.firmware) {
-        if(!hasVersions(fw)) continue;
-        if(selected.firmwareClass && fw.class !== selected.firmwareClass) continue;
-        (groups[fw.class || 'other'] ??= []).push(fw);
+      for (const fw of selected.device.firmware) {
+        if (!hasVersions(fw)) continue;
+        if (selected.firmwareClass && fw.class !== selected.firmwareClass)
+          continue;
+        (groups[fw.class || "other"] ??= []).push(fw);
       }
       // known classes first, in their defined order
       const order = [...Object.keys(firmwareClasses), ...Object.keys(groups)];
-      return Object.fromEntries([...new Set(order)].filter(cls => groups[cls]).map(cls => [cls, groups[cls]]));
+      return Object.fromEntries(
+        [...new Set(order)]
+          .filter((cls) => groups[cls])
+          .map((cls) => [cls, groups[cls]]),
+      );
     });
 
     const downloads = computed(() => {
       const { device } = selected;
-      if(!currentVersion.value || currentVersion.value.customFile) return [];
-      const files = currentVersion.value.files.map(file => ({ title: file.title, href: firmwareUrl(config, file) }));
-      if(device.type === 'nrf52') {
-        if(device.erase) {
-          const eraseUf2 = device.erase.replace('.zip', '.uf2');
-          files.push({ title: eraseUf2, href: `${config.staticPath}/${eraseUf2}` });
+      if (!currentVersion.value || currentVersion.value.customFile) return [];
+      const files = currentVersion.value.files.map((file) => ({
+        title: file.title,
+        href: firmwareUrl(config, file),
+      }));
+      if (device.type === "nrf52") {
+        if (device.erase) {
+          const eraseUf2 = device.erase.replace(".zip", ".uf2");
+          files.push({
+            title: eraseUf2,
+            href: `${config.staticPath}/${eraseUf2}`,
+          });
         }
-        for(const bootloader of device.bootloader ?? []) {
-          files.push({ title: bootloader, href: `${config.staticPath}/${bootloader}` });
+        for (const bootloader of device.bootloader ?? []) {
+          files.push({
+            title: bootloader,
+            href: `${config.staticPath}/${bootloader}`,
+          });
         }
       }
       return files;
@@ -102,20 +136,24 @@ export function createSetup(config) {
 
     const selectFirmware = (firmware) => {
       selected.firmware = firmware;
-      selected.version = firmware && Object.keys(firmware.version).find(v => firmware.version[v].files.length > 0);
+      selected.version =
+        firmware &&
+        Object.keys(firmware.version).find(
+          (v) => firmware.version[v].files.length > 0,
+        );
     };
 
     const applySelection = ({ device, firmware, version, firmwareClass }) => {
       selected.device = device;
       selected.firmwareClass = firmwareClass;
       selectFirmware(firmware);
-      if(version) selected.version = version;
+      if (version) selected.version = version;
     };
 
     const stepBack = () => {
-      if(selected.firmware) {
+      if (selected.firmware) {
         // custom files have no role screen to go back to
-        if(currentVersion.value?.customFile) selected.device = null;
+        if (currentVersion.value?.customFile) selected.device = null;
         selectFirmware(null);
         return;
       }
@@ -125,7 +163,14 @@ export function createSetup(config) {
 
     const resetFlashing = async () => {
       await releaseFlasher(flashing.instance);
-      Object.assign(flashing, { instance: null, active: false, percent: 0, log: '', error: '', dfuComplete: false });
+      Object.assign(flashing, {
+        instance: null,
+        active: false,
+        percent: 0,
+        log: "",
+        error: "",
+        dfuComplete: false,
+      });
     };
 
     const retry = resetFlashing;
@@ -134,17 +179,20 @@ export function createSetup(config) {
     // --- URL sync ---
 
     const currentPath = computed(() => {
-      if(serialCon.opened) return CONSOLE_PATH;
-      // a local file can't be linked to
-      if(currentVersion.value?.customFile) return '/';
+      if (currentVersion.value?.customFile) return "/";
       return buildPath(config, selected);
     });
 
     // keeps ?config= and ?iframe= across navigation
-    const setLocation = (path, replace) => history[replace ? 'replaceState' : 'pushState'](null, '', path + location.search);
+    const setLocation = (path, replace) =>
+      history[replace ? "replaceState" : "pushState"](
+        null,
+        "",
+        path + location.search,
+      );
 
     watch(currentPath, (path) => {
-      if(location.pathname === path) return;
+      if (location.pathname === path) return;
       setLocation(path, isSamePage(location.pathname, path));
     });
 
@@ -154,63 +202,14 @@ export function createSetup(config) {
       setLocation(currentPath.value, true);
     };
 
-    window.addEventListener('popstate', () => {
-      if(serialCon.opened) closeSerialCon();
+    window.addEventListener("popstate", () => {
       flashing.active = false;
-      flashing.log = '';
-      flashing.error = '';
+      flashing.log = "";
+      flashing.error = "";
       applyLocation();
     });
 
     applyLocation();
-
-    // --- serial console ---
-
-    const openSerialGUI = () => {
-      window.open('https://config.meshcore.io', 'meshcore_config', 'directories=no,titlebar=no,toolbar=no,location=no,status=no,menubar=no,scrollbars=no,resizable=no,width=1000,height=800');
-    };
-
-    const openSerialCon = async () => {
-      const serialConsole = serialCon.instance = new SerialConsole(await serialAPI.requestPort());
-
-      serialCon.content =
-        '-------------------------------------------------------------------------\n' +
-        'Welcome to MeshCore serial console.\n' +
-        'Click on the cursor to get all supported commands.\n' +
-        '-------------------------------------------------------------------------\n\n';
-
-      serialConsole.onOutput = (text) => { serialCon.content += text };
-      serialConsole.connect();
-      serialCon.opened = true;
-      await nextTick();
-      consoleEditBox.value.focus();
-    };
-
-    const closeSerialCon = async () => {
-      serialCon.opened = false;
-      await serialCon.instance.disconnect();
-    };
-
-    const sendCommand = async (text) => {
-      const consoleEl = consoleWindow.value;
-      serialCon.edit = '';
-      await serialCon.instance.sendCommand(text);
-      setTimeout(() => consoleEl.scrollTop = consoleEl.scrollHeight, 100);
-    };
-
-    const showMessage = (text, icon = '', displayMs = 2000) => {
-      Object.assign(snackbar, { class: 'active', text, icon });
-      setTimeout(() => Object.assign(snackbar, { class: '', text: '', icon: '' }), displayMs);
-    };
-
-    const consoleMouseUp = () => {
-      const selection = window.getSelection().toString();
-      if(selection.length) {
-        navigator.clipboard.writeText(selection);
-        showMessage('text copied to clipboard');
-      }
-      consoleEditBox.value.focus();
-    };
 
     // --- flashing ---
 
@@ -222,24 +221,24 @@ export function createSetup(config) {
     const customFirmwareLoad = (ev) => {
       const file = ev.target.files[0];
       selected.device = {
-        name: 'Custom device',
-        type: file.name.endsWith('.bin') ? 'esp32' : 'nrf52',
+        name: "Custom device",
+        type: file.name.endsWith(".bin") ? "esp32" : "nrf52",
       };
 
-      if(isMergedImage(file.name)) {
+      if (isMergedImage(file.name)) {
         alert(
           'You selected custom file that ends with "merged.bin". ' +
-          'This will erase your flash! Proceed with caution. ' +
-          'If you want just to update your firmware, please use non-merged bin.'
+            "This will erase your flash! Proceed with caution. " +
+            "If you want just to update your firmware, please use non-merged bin.",
         );
         selected.wipe = true;
       }
 
       selected.firmware = {
-        icon: 'unknown_document',
+        icon: "unknown_document",
         title: file.name,
         version: {
-          [file.name]: { customFile: true, files: [{ type: 'flash', file }] },
+          [file.name]: { customFile: true, files: [{ type: "flash", file }] },
         },
       };
       selected.version = file.name;
@@ -247,16 +246,17 @@ export function createSetup(config) {
 
     const nrfErase = async () => {
       const { device } = selected;
-      if(!(device.type === 'nrf52' && device.erase)) {
-        console.error('nRF erase called for non-nrf device or device.erase is not defined');
+      if (!(device.type === "nrf52" && device.erase)) {
+        console.error(
+          "nRF erase called for non-nrf device or device.erase is not defined",
+        );
         return;
       }
 
       let data;
       try {
         data = await downloadFirmware(`${config.staticPath}/${device.erase}`);
-      }
-      catch(e) {
+      } catch (e) {
         alert(e.message);
         return;
       }
@@ -264,72 +264,106 @@ export function createSetup(config) {
       const dfu = new Dfu(await serialAPI.requestPort({}));
       try {
         eraser.active = true;
-        await flashNrf52(dfu, data, (progress) => { eraser.percent = progress });
+        await flashNrf52(dfu, data, (progress) => {
+          eraser.percent = progress;
+        });
         eraser.active = false;
         flashing.dfuComplete = false;
-        setTimeout(() => alert('Device erase firmware has been flashed and flash has been erased.\nYou can flash MeshCore now.'), 200);
-      }
-      catch(e) {
-        alert(`${e.message}\nDid you put the device into DFU mode before attempting erasing?`);
+        setTimeout(
+          () =>
+            alert(
+              "Device erase firmware has been flashed and flash has been erased.\nYou can flash MishMesh now.",
+            ),
+          200,
+        );
+      } catch (e) {
+        alert(
+          `${e.message}\nDid you put the device into DFU mode before attempting erasing?`,
+        );
         eraser.active = false;
         eraser.percent = 0;
       }
     };
 
     const flashDevice = async () => {
-      const esp32 = selected.device.type === 'esp32';
-      const file = pickFlashFile(currentVersion.value.files, { esp32, wipe: selected.wipe });
-      if(!file) {
-        alert('Cannot find configuration for flash file! please report this to Discord.');
+      const esp32 = selected.device.type === "esp32";
+      const file = pickFlashFile(currentVersion.value.files, {
+        esp32,
+        wipe: selected.wipe,
+      });
+      if (!file) {
+        alert(
+          "Cannot find configuration for flash file! please report this to Discord.",
+        );
         return;
       }
 
       let data;
       try {
-        data = file.file ?? await downloadFirmware(firmwareUrl(config, file));
-      }
-      catch(e) {
+        data = file.file ?? (await downloadFirmware(firmwareUrl(config, file)));
+      } catch (e) {
         alert(e.message);
         return;
       }
 
       const port = await serialAPI.requestPort({});
-      const onProgress = (percent) => { flashing.percent = percent };
+      const onProgress = (percent) => {
+        flashing.percent = percent;
+      };
       flashing.active = true;
 
       try {
-        if(esp32) {
+        if (esp32) {
           await flashEsp32(port, data, {
             address: esp32Address(file),
             eraseAll: selected.wipe,
             terminal: log,
             onProgress,
-            onLoader: (loader) => { flashing.instance = loader },
+            onLoader: (loader) => {
+              flashing.instance = loader;
+            },
           });
-        }
-        else {
-          const dfu = flashing.instance = new Dfu(port);
+        } else {
+          const dfu = (flashing.instance = new Dfu(port));
           await flashNrf52(dfu, data, onProgress);
         }
-      }
-      catch(e) {
+      } catch (e) {
         flashing.error = e.message;
       }
     };
 
     return {
-      config, logoFile, isIframe, commandReference, firmwareClasses, WEB_SERIAL_UNSUPPORTED,
-      displayWelcomeBanner, dismissWelcomeBanner() {
-        localStorage.setItem('welcomeBannerDismissed', '1');
+      config,
+      logoFile,
+      isIframe,
+      firmwareClasses,
+      WEB_SERIAL_UNSUPPORTED,
+      displayWelcomeBanner,
+      dismissWelcomeBanner() {
+        localStorage.setItem("welcomeBannerDismissed", "1");
         displayWelcomeBanner.value = false;
       },
       snackbar,
-      selected, flashing, eraser, serialCon,
-      deviceFilterText, hoveredDevice, devices, deviceFirmwareByClass,
-      currentVersion, notice, downloads, fwValue, formatChangeLog,
-      selectFirmware, stepBack, retry, close,
-      consoleEditBox, consoleWindow, consoleMouseUp, openSerialCon, closeSerialCon, sendCommand, openSerialGUI,
-      dfuMode, nrfErase, flashDevice, customFirmwareLoad,
+      selected,
+      flashing,
+      eraser,
+      deviceFilterText,
+      hoveredDevice,
+      devices,
+      deviceFirmwareByClass,
+      currentVersion,
+      notice,
+      downloads,
+      fwValue,
+      formatChangeLog,
+      selectFirmware,
+      stepBack,
+      retry,
+      close,
+      dfuMode,
+      nrfErase,
+      flashDevice,
+      customFirmwareLoad,
     };
   };
 }

@@ -1,8 +1,15 @@
+@font-face {
+  font-family: "NokiaFC";
+  src: url("/assets/nokiafc22.ttf") format("truetype");
+  font-display: block;
+}
+
 [v-cloak] {
   display: none;
 }
 
 body {
+  font-family: "NokiaFC", "Courier New", monospace;
   display: flex;
   height: 100vh;
 }

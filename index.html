@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MeshCore flasher</title>
+  <title>MishMesh flasher</title>
   <link href="/css/beer.css" rel="stylesheet">
   <link href="/css/flasher.css" rel="stylesheet">
   <script type="module" src="/flasher.js"></script>
@@ -54,11 +54,6 @@
             <div class="max" v-else>
               <h6>Flashing complete!</h6>
               <nav class="small-margin wrap">
-                <button @click="openSerialGUI()" v-if="selected.firmware.role === 'roomServer' || selected.firmware.role === 'repeater'">
-                  <i>manufacturing</i>
-                  <span>Configure via USB</span>
-                  <div class="tooltip bottom start max">Open GUI to configure Repeaters and Room servers via USB serial</div>
-                </button>
                 <button @click="close">
                   <i>arrow_back</i>
                   <span>Close</span>
@@ -122,8 +117,8 @@
               <input type="checkbox" v-model="selected.wipe">
               <span>Erase device</span>
               <div class="tooltip right max">
-                DO NOT carry out a full erase if you are simply updating your MeshCore device,
-                otherwise it will erase your MeshCore identity for that device.
+                DO NOT carry out a full erase if you are simply updating your MishMesh device,
+                otherwise it will erase your MishMesh identity for that device.
               </div>
             </label>
           </li>
@@ -217,7 +212,7 @@
       </div>
       <div v-else>
       <article class="welcome-banner" v-if="displayWelcomeBanner">
-        <span>New to Meshcore? You can <a target="_blank" href="https://www.youtube.com/watch?v=ems9_XvdPX8">watch tutorial on how to flash your device</a></span>
+        <span>New to MishMesh? You can <a target="_blank" href="https://www.youtube.com/watch?v=ems9_XvdPX8">watch tutorial on how to flash your device</a></span>
         <button class="circle small transparent no-margin" @click="dismissWelcomeBanner"><i>close</i></button>
       </article>
       <header>
@@ -231,16 +226,6 @@
               <span class="hide-mobile">Custom Firmware</span>
               <div class="tooltip bottom end max hide-mobile">Flash custom firmware file from your computer: <b>.bin</b> for esp32, OTA <b>.zip</b> for nRF52</div>
               <input type="file" accept=".zip,.bin" @change="customFirmwareLoad">
-            </button>
-            <button class="transparent" @click="openSerialGUI()" title="Repeater Setup">
-              <i>manufacturing</i>
-              <span class="hide-mobile">Repeater Setup</span>
-              <div class="tooltip bottom end max hide-mobile">Open GUI to configure Repeaters and Room servers via USB serial</div>
-            </button>
-            <button class="transparent" @click="openSerialCon()" title="USB Serial Console">
-              <i>terminal</i>
-              <span class="hide-mobile">Console</span>
-              <div class="tooltip bottom end max hide-mobile">Open serial console to manage Routers and Room servers</div>
             </button>
           </nav>
           <nav class="no-margin">
@@ -286,24 +271,6 @@
           </li>
         </ul>
       </div>
-    </div>
-    <div v-if="serialCon.opened" class="overlay active">
-      <datalist id="command-db">
-        <option v-for="(desc, command) in commandReference" :value="command">{{ desc }}</option>
-      </datalist>
-      <header>
-        <nav>
-          <button class="circle transparent" @click="closeSerialCon()"><i>arrow_back</i></button>
-          <h6 class="small max">Serial Console</h6>
-        </nav>
-      </header>
-      <pre class="console" ref="consoleWindow" tabindex="0" @mouseup="consoleMouseUp">
-        <code>{{ serialCon.content }}</code>
-        <div class="holder">
-          <span>&gt;</span>
-          <input ref="consoleEditBox" class="console-input" type="text" v-model="serialCon.edit" @keydown.enter.prevent="sendCommand(serialCon.edit)" list="command-db">
-        </div>
-      </pre>
     </div>
   </div>
 </body>

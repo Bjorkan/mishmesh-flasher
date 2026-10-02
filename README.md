@@ -1,6 +1,7 @@
-## flasher.meshcore.io
+## MishMesh Flasher
 
-Frontend part of the flasher 
-- esp32 flashing using esptool.js
-- custom nrf52 serial flashing based on adafruit-nrfutil
-- serial console
+Browser-based firmware flasher for MishMesh devices deployed on GitHub Pages.
+
+- ESP32 flashing using esptool.js
+- nRF52 serial flashing based on adafruit-nrfutil
+- Release discovery via pre-built static JSON (updated by GitHub Action)
