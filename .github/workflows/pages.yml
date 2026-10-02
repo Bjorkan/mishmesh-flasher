@@ -28,7 +28,7 @@ jobs:
           curl -sf -H "Accept: application/json" \
             -H "User-Agent: MishMesh-Flasher" \
             "https://api.github.com/repos/burakcan/MeshCore-mishmesh/releases?per_page=100" \
-            | jq '[.[] | select(.draft == false and .prerelease == false) | {type: "firmware", version: .tag_name, notes: (.body // ""), files: (.assets // [] | map({name: .name, url: .browser_download_url}))]' \
+            | jq '[.[] | select(.draft == false and .prerelease == false) | {type: "firmware", version: .tag_name, notes: (.body // ""), files: (.assets // [] | map({name: .name, url: .browser_download_url}))}]' \
             > releases-github.json
           echo "Saved $(jq length releases-github.json) releases"
 
